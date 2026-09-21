@@ -1,0 +1,53 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include "lgfx_user/LGFX_Waveshare_ESP32S3_Touch_LCD_7.h"
+
+#define SCREEN_WIDTH  800 
+#define SCREEN_HEIGHT 480
+
+// Global display instance instantiation
+LGFX_Waveshare lcd;
+
+void setup() {
+  // Mount Serial engine over USB CDC pins
+  Serial.begin(115200);
+  delay(1000); 
+  Serial.println("Starting Waveshare 27078 PlatformIO Boot sequence...");
+
+  // Force I2C initialization to secure touch interface lines
+  Wire.begin(8, 9, 400000);
+
+  // Initialize display controller engine
+  lcd.init();
+  lcd.setRotation(0); 
+  lcd.setBrightness(100); // Establish baseline visible backlight strength
+  lcd.clear(TFT_BLACK);
+
+  // Render static baseline diagnostic texts
+  lcd.setTextColor(TFT_GREEN);
+  lcd.setFont(&fonts::FreeSans12pt7b);
+  lcd.drawString("PlatformIO Raw LovyanGFX", 30, 30);
+
+  lcd.drawRect(20, 70, SCREEN_WIDTH - 40, SCREEN_HEIGHT - 90, TFT_WHITE);
+  
+  lcd.setFont(&fonts::Font0);
+  lcd.setTextColor(TFT_YELLOW);
+  lcd.drawString("Drag your finger across the container grid to test touch accuracy:", 40, 85);
+}
+
+void loop() {
+  int32_t tX, tY;
+
+  // Active polling tracking loop
+  if (lcd.getTouch(&tX, &tY)) {
+    // Keep canvas elements constrained within safety layout panels
+    if (tX > 25 && tX < (SCREEN_WIDTH - 25) && tY > 110 && tY < (SCREEN_HEIGHT - 25)) {
+      Serial.printf("Touch Coordinate Capture: X:%d, Y:%d\n", tX, tY);
+      
+      // Paint intersecting circles right over the screen frame buffer
+      lcd.fillCircle(tX, tY, 6, TFT_MAGENTA);
+      lcd.drawCircle(tX, tY, 12, TFT_CYAN);
+    }
+  }
+  delay(8); // Optimization delay to control task cycles
+}
